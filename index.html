@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="ur">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Khata</title>
+<meta name="theme-color" content="#a3172c">
+<meta name="description" content="Awaaz se kharcha likhne wala apna khata">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: one thumb-width column, like a bahi-khata page — red ledger cover on top, a big listening ear, ruled entries below */
+:root{
+  --bg:#f4f3ef; --paper:#ffffff; --ink:#1f1a1c; --muted:#6c6365; --rule:#e4dfdc;
+  --accent:#a3172c; --accent-ink:#ffffff; --thread:#d9a21b;
+  --good:#2f7d4f; --warn:#b86e00; --bad:#b3261e;
+  --display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#151213; --paper:#1f1b1c; --ink:#f2ecec; --muted:#a99fa1; --rule:#352e30;
+  --accent:#d8435a; --accent-ink:#ffffff; --thread:#e7b53c;
+  --good:#5fbf86; --warn:#e7a23a; --bad:#ff7a6e; color-scheme:dark}}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:max(12px,env(safe-area-inset-top,0px)) max(40px,env(safe-area-inset-bottom,0px))}
+.wrap{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.num{font-variant-numeric:tabular-nums}
+button,select{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--thread);outline-offset:2px}
+
+.cover{background:var(--accent);color:var(--accent-ink);border-radius:18px;padding:16px 18px 14px;position:relative;overflow:hidden}
+.cover::after{content:"";position:absolute;top:0;bottom:0;right:28px;width:4px;background:var(--thread);opacity:.9}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-right:24px}
+.brand{font-family:var(--display);font-weight:800;font-size:26px;margin:0;display:flex;align-items:center;gap:10px}
+.brand img{width:32px;height:32px;border-radius:8px;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+.month{font-size:12px;text-transform:uppercase;letter-spacing:.08em;opacity:.85}
+.left{margin-top:12px;font-family:var(--display);font-weight:800;font-size:42px;line-height:1}
+.leftlbl{font-size:14px;opacity:.9;margin-top:4px}
+.meter{height:10px;border-radius:6px;background:rgba(255,255,255,.25);margin-top:12px;overflow:hidden;margin-right:24px}
+.meter i{display:block;height:100%;background:#fff;border-radius:6px;transition:width .4s}
+.meta{display:flex;justify-content:space-between;font-size:13px;margin-top:6px;opacity:.9;padding-right:24px}
+
+.alert{border-radius:14px;padding:12px 14px;font-weight:600;border:2px solid currentColor;background:var(--paper)}
+.alert.warn{color:var(--warn)} .alert.bad{color:var(--bad)}
+
+/* listening ear */
+.ear{background:var(--paper);border:1px solid var(--rule);border-radius:18px;padding:18px 14px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.orb{width:116px;height:116px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;position:relative}
+.orb svg{width:44px;height:44px}
+.orb::before{content:"";position:absolute;inset:-10px;border-radius:50%;border:3px solid var(--accent);opacity:0}
+.ear[data-s="listen"] .orb::before{animation:pulse 1.4s ease-out infinite}
+.ear[data-s="think"] .orb,.ear[data-s="speak"] .orb{background:var(--thread);color:#1f1a1c}
+.ear[data-s="stopped"] .orb,.ear[data-s="blocked"] .orb,.ear[data-s="nosupport"] .orb{background:var(--muted)}
+@keyframes pulse{0%{transform:scale(.9);opacity:.7}100%{transform:scale(1.25);opacity:0}}
+.state{font-family:var(--display);font-weight:600;font-size:20px}
+.live{min-height:1.5em;font-size:17px;color:var(--muted);overflow-wrap:anywhere;max-width:100%}
+.reply{width:100%;text-align:left;font-size:15px;padding:10px 12px;border-left:4px solid var(--thread);background:var(--bg);border-radius:6px}
+.typebox{width:100%;display:flex;gap:8px}
+.typebox input{flex:1;min-width:0;font:inherit;padding:10px 12px;border-radius:10px;border:1.5px solid var(--rule);background:var(--bg);color:var(--ink)}
+.typebox button{border:0;border-radius:10px;padding:10px 14px;background:var(--ink);color:var(--paper);font-weight:600}
+.small{font-size:13px;color:var(--muted)}
+
+.tabs{display:flex;gap:6px;background:var(--paper);border:1px solid var(--rule);border-radius:14px;padding:4px}
+.tabs button{flex:1;border:0;background:transparent;color:var(--muted);padding:10px 4px;border-radius:10px;font-weight:600;font-size:14px}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+.card{background:var(--paper);border:1px solid var(--rule);border-radius:16px;padding:14px}
+h2{font-family:var(--display);font-weight:600;font-size:19px;margin:0 0 8px;text-wrap:balance}
+.total{font-family:var(--display);font-weight:800;font-size:32px}
+.sub{color:var(--muted);font-size:14px}
+
+.list{list-style:none;margin:0;padding:0}
+.list li{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--rule)}
+.list li:last-child{border-bottom:0}
+.list .what{min-width:0;display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+.list .note{overflow-wrap:anywhere}
+.list li.day{display:block;border:0;padding:12px 0 0;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.amt{font-weight:600;font-variant-numeric:tabular-nums}
+.x{border:0;background:transparent;color:var(--muted);font-size:16px;padding:6px 8px;border-radius:8px}
+select.chip{appearance:none;-webkit-appearance:none;font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:999px;border:1px solid var(--rule);background:transparent;color:var(--muted)}
+select.chip.need{border-color:var(--good);color:var(--good)} select.chip.extra{border-color:var(--warn);color:var(--warn)}
+.tag{display:inline-block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;border-radius:999px;border:1px solid}
+.tag.need{color:var(--good)} .tag.extra{color:var(--warn)}
+
+.bars{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.bar .lab{display:flex;justify-content:space-between;font-size:14px;gap:8px}
+.bar .track{height:8px;background:var(--bg);border-radius:5px;margin-top:4px;overflow:hidden}
+.bar .track i{display:block;height:100%;border-radius:5px}
+.bar.need .track i{background:var(--good)} .bar.extra .track i{background:var(--warn)}
+.cmp{font-size:12px;color:var(--muted)} .cmp.up{color:var(--bad)} .cmp.down{color:var(--good)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.split div{background:var(--bg);border-radius:12px;padding:10px}
+.split b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.empty{color:var(--muted);text-align:center;padding:18px 6px}
+.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:600;background:var(--accent);color:var(--accent-ink);flex:1;min-width:120px}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--rule)}
+.row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.set label{display:block;font-weight:600;margin-top:12px}
+.set input,.set select,.set textarea{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:1.5px solid var(--rule);background:var(--bg);color:var(--ink);margin-top:4px}
+.set .toggle{display:flex;align-items:center;gap:10px;margin-top:12px;font-weight:600}
+.set .toggle input{width:auto;margin:0}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="cover" aria-label="Is mahine ka budget">
+    <div class="top"><h1 class="brand"><img src="icons/icon-192.png" alt="">Khata</h1><span class="month" id="monthName"></span></div>
+    <div class="left num" id="leftAmt">€0</div>
+    <div class="leftlbl" id="leftLbl">baqi hain is mahine</div>
+    <div class="meter" aria-hidden="true"><i id="meterFill" style="width:100%"></i></div>
+    <div class="meta num"><span id="spentLbl">Kharcha €0</span><span id="budgetLbl">Budget €200</span></div>
+  </section>
+
+  <div id="alertBox" class="alert" hidden></div>
+
+  <section class="ear" id="ear" data-s="stopped" aria-live="polite">
+    <button class="orb" id="orb" aria-label="Bolne ke liye dabayein">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="17" x2="12" y2="22"/></svg>
+    </button>
+    <div class="state" id="stateTxt">Shuru ho rahi hoon…</div>
+    <div class="live" id="live">Bolein, jaise: "aaj grocery mein 23 euro lage"</div>
+    <div class="reply" id="reply" hidden></div>
+    <div class="typebox">
+      <input id="typeIn" placeholder="Ya yahan likh dein…" autocomplete="off">
+      <button id="typeBtn">Likho</button>
+    </div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="t-list" aria-selected="true" data-tab="list">Khata</button>
+    <button role="tab" id="t-week" aria-selected="false" data-tab="week">Is hafta</button>
+    <button role="tab" id="t-month" aria-selected="false" data-tab="month">Is mahina</button>
+    <button role="tab" id="t-set" aria-selected="false" data-tab="set">Settings</button>
+  </nav>
+
+  <section class="card" id="p-list"></section>
+  <section class="card" id="p-week" hidden></section>
+  <section class="card" id="p-month" hidden></section>
+  <section class="card set" id="p-set" hidden>
+    <h2>Settings</h2>
+    <label for="budgetIn">Mahine ka budget (€)</label>
+    <input id="budgetIn" type="number" inputmode="decimal" min="0" step="1">
+    <label for="alertIn">Alert kab dein? Jab itne € baqi rahein</label>
+    <input id="alertIn" type="number" inputmode="decimal" min="0" step="1">
+    <label for="langIn">Aap kis zubaan mein bolengi?</label>
+    <select id="langIn">
+      <option value="hi-IN">Urdu / Hindi mila jula (behtar samajhta hai)</option>
+      <option value="ur-PK">Urdu (Pakistan)</option>
+      <option value="en-IN">English</option>
+      <option value="es-ES">Español</option>
+    </select>
+    <div class="toggle"><input type="checkbox" id="voiceIn"><label for="voiceIn" style="margin:0">Jawab awaaz mein sunao</label></div>
+    <div class="toggle"><input type="checkbox" id="autoIn"><label for="autoIn" style="margin:0">App khulte hi khud sunna shuru karo</label></div>
+    <div class="row"><button class="btn" id="saveSet">Save karo</button><button class="btn ghost" id="testVoice">Awaaz test karo</button></div>
+    <p class="small" id="setMsg"></p>
+
+    <h2 style="margin-top:18px">Awaaz ke hukm</h2>
+    <p class="small">"20 euro grocery" · "metro 10 aur kebab 8 euro" (do cheezein ek saath) · "kitna bacha hai" · "is hafte kitna kharcha hua" · "is mahine ka hisaab" · "budget 250" · "aakhri wala mita do" · "bas, shukriya" (sunna band)</p>
+
+    <h2 style="margin-top:18px">Backup</h2>
+    <p class="small">Aap ka hisaab sirf is phone mein save hai. Kabhi kabhi copy kar ke WhatsApp par khud ko bhej dein.</p>
+    <div class="row"><button class="btn ghost" id="copyBk">Hisaab copy karo</button></div>
+    <label for="bkIn">Purana backup yahan paste karein</label>
+    <textarea id="bkIn" rows="3"></textarea>
+    <div class="row"><button class="btn ghost" id="loadBk">Backup wapas daalo</button></div>
+    <p class="small" id="bkMsg"></p>
+  </section>
+</div>
+
+<script>
+(function(){
+var KEY="khata.v1";
+var CATS={
+  grocery:{n:"Grocery",need:true,k:["grocery","groceri","sabzi","sabji","doodh","dudh","aata","atta","chawal","anday","ande","gosht","murgi","chicken","phal","fruit","saman","samaan","mercadona","lidl","consum","carrefour","aldi","supermercado","raashan","rashan","किराना","सब्ज़ी","सब्जी","दूध","आटा","चावल","अंडे","गोश्त","चिकन","फल","ग्रॉसरी","ग्रोसरी","ग्रोसरि","राशन","सामान","मर्का","लिडल","लिडिल","सुपर","سبزی","دودھ","سامان","گروسری"]},
+  ghar:{n:"Ghar / Kiraya",need:true,k:["kiraya","kiraaya","rent","alquiler","किराया","रेंट","کرایہ"]},
+  bills:{n:"Bills",need:true,k:["bill","bijli","luz","agua","internet","wifi","iberdrola","बिल","बिजली","इंटरनेट","بل","بجلی"]},
+  safar:{n:"Safar",need:true,k:["metro","bus","emt","taxi","uber","cabify","train","renfe","tren","bono","gasolina","petrol","valenbisi","मेट्रो","बस","टैक्सी","ट्रेन","ٹیکسی","میٹرو"]},
+  sehat:{n:"Sehat / Dawai",need:true,k:["dawai","dawa","medicine","farmacia","pharmacy","doctor","dentist","hospital","दवा","दवाई","फार्मेसी","डॉक्टर","دوائی"]},
+  mobile:{n:"Mobile",need:true,k:["mobile","recarga","recharge","sim","lyca","digi","मोबाइल","रिचार्ज","موبائل"]},
+  papers:{n:"Kaghazat / Fees",need:true,k:["tasa","fees","fee","notaria","foto","photo","copia","certificado","फीस","फोटो","فیس"]},
+  ghar_bheja:{n:"Ghar bheje",need:true,k:["bheje","bheja","bhejay","envio","remesa","western union","भेजे","भेजा","بھیجے"]},
+  khana:{n:"Bahar khana",need:false,k:["restaurant","restaurante","cafe","café","coffee","kebab","doner","pizza","burger","mcdonald","kfc","chai","रेस्टोरेंट","कॉफी","कबाब","पिज़्ज़ा","पिज्जा","बर्गर","चाय","ریسٹورنٹ"]},
+  kapre:{n:"Kapre / Shopping",need:false,k:["kapre","kapray","kapde","clothes","shoes","joote","primark","zara","shein","shopping","कपड़े","कपड़ा","जूते","शॉपिंग","کپڑے"]},
+  tohfa:{n:"Tohfa / Ghoomna",need:false,k:["gift","tohfa","cinema","movie","trip","party","गिफ्ट","तोहफा","सिनेमा","تحفہ"]},
+  digar:{n:"Digar (baqi)",need:false,k:[]}
+};
+var WORDNUM={"ek":1,"do":2,"teen":3,"char":4,"chaar":4,"panch":5,"paanch":5,"chhe":6,"saat":7,"aath":8,"nau":9,"das":10,"pandrah":15,"bees":20,"pachees":25,"tees":30,"chalees":40,"pachas":50,"pachaas":50,"sau":100,
+  "एक":1,"दो":2,"तीन":3,"चार":4,"पांच":5,"पाँच":5,"छह":6,"सात":7,"आठ":8,"नौ":9,"दस":10,"पंद्रह":15,"बीस":20,"पच्चीस":25,"तीस":30,"चालीस":40,"पचास":50,"सौ":100};
+var MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+var st={budget:200,alertAt:20,voice:true,auto:true,lang:"hi-IN",entries:[],seenWeek:"",seenMonth:""};
+var storageOk=true;
+try{var raw=localStorage.getItem(KEY); if(raw){var o=JSON.parse(raw); for(var k in o) st[k]=o[k];}}catch(e){storageOk=false}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st));storageOk=true}catch(e){storageOk=false}}
+try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist() }catch(e){}
+
+function $(id){return document.getElementById(id)}
+function r2(n){return Math.round(n*100)/100}
+function eur(n){var r=r2(n); return "€"+(r%1===0?r.toFixed(0):r.toFixed(2).replace(".",","))}
+function eurSay(n){var r=r2(n); return (r%1===0?r.toFixed(0):r.toFixed(2).replace(".",","))+" euro"}
+function monthKey(d){return d.getFullYear()+"-"+(d.getMonth()+1)}
+function weekStart(d){var x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x}
+function weekKey(d){var w=weekStart(d); return w.getFullYear()+"-"+(w.getMonth()+1)+"-"+w.getDate()}
+function inMonth(e,d){var t=new Date(e.ts); return t.getFullYear()===d.getFullYear()&&t.getMonth()===d.getMonth()}
+function inWeek(e,d){return weekKey(new Date(e.ts))===weekKey(d)}
+function sum(a){return a.reduce(function(s,e){return s+e.amt},0)}
+function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
+
+function norm(t){
+  var dev="०१२३४५६७८९", ur="۰۱۲۳۴۵۶۷۸۹";
+  return String(t).replace(/[०-९]/g,function(c){return dev.indexOf(c)}).replace(/[۰-۹]/g,function(c){return ur.indexOf(c)});
+}
+function findAmount(t){
+  var s=norm(t).toLowerCase().replace(/(\d)[.,](\d{3})(?!\d)/g,"$1$2");
+  var m=s.match(/(\d+(?:[.,]\d{1,2})?)\s*(?:€|euro|eur|yuro|यूरो|युरो|यूरोज़|یورو)/) || s.match(/€\s*(\d+(?:[.,]\d{1,2})?)/) || s.match(/(\d+(?:[.,]\d{1,2})?)/);
+  if(m) return parseFloat(m[1].replace(",","."));
+  var words=s.split(/[\s,.!?]+/);
+  for(var i=0;i<words.length;i++){ var v=WORDNUM[words[i]]; if(v){ if(WORDNUM[words[i+1]]===100) v*=100; return v } }
+  return null;
+}
+function findCat(t){
+  var s=" "+t.toLowerCase()+" ";
+  for(var c in CATS){ var ks=CATS[c].k; for(var i=0;i<ks.length;i++){ var at=s.indexOf(ks[i]); if(at>-1 && !(/^[a-z]/.test(ks[i]) && /[a-z]/.test(s.charAt(at-1)))) return c } }
+  return "digar";
+}
+function has(s,re){return re.test(s)}
+var RE_Q=/kitna|kitne|baqi|baaki|bacha|bachi|hisaab|hisab|report|कितना|कितने|बचा|बाकी|बाक़ी|हिसाब|کتنا|باقی/;
+var RE_WEEK=/hafte|hafta|week|हफ्ते|हफ़्ते|हफ्ता|سپتے|ہفتے/;
+var RE_MONTH=/mahine|mahina|month|महीने|महीना|مہینے/;
+var RE_DEL=/mita|hata|delete|galat|ghalat|मिटा|हटा|गलत|ग़लत|ڈیلیٹ|مٹا/;
+var RE_STOP=/^(bas|shukriya|band karo|stop|बस|शुक्रिया|बंद करो|بس|شکریہ)(?=[\s,،.!?।]|$)|bas shukriya|बस शुक्रिया|बंद करो|band karo/;
+
+/* ---------- awaaz se jawab ---------- */
+var voices=[], speaking=false, afterSpeak=null;
+function loadVoices(){try{voices=window.speechSynthesis?speechSynthesis.getVoices():[]}catch(e){voices=[]}}
+loadVoices(); try{ if(window.speechSynthesis) speechSynthesis.onvoiceschanged=loadVoices }catch(e){}
+function speak(text,then){
+  if(!st.voice||!window.speechSynthesis){ if(then) setTimeout(then,500); return }
+  try{
+    speechSynthesis.cancel();
+    if(listening){ try{ rec&&rec.abort() }catch(e){} listening=false } /* mic band, warna app apni hi awaaz sun kar entry bana leti hai */
+    var u=new SpeechSynthesisUtterance(text), pick=null, prefs=["ur-PK","ur-IN","ur","hi-IN","hi","en-IN","en-GB","en-US"];
+    for(var i=0;i<prefs.length&&!pick;i++){ for(var j=0;j<voices.length;j++){ var l=(voices[j].lang||"").replace("_","-").toLowerCase(); if(l.indexOf(prefs[i].toLowerCase())===0){pick=voices[j];break} } }
+    if(pick){u.voice=pick;u.lang=pick.lang} else u.lang="hi-IN";
+    u.rate=0.95; speaking=true; setEar("speak");
+    var done=false; function fin(){ if(done) return; done=true; speaking=false; if(then) then() }
+    u.onend=fin; u.onerror=fin; setTimeout(fin, 2500+text.length*90);
+    speechSynthesis.speak(u);
+  }catch(e){ speaking=false; if(then) then() }
+}
+function reply(text,thenListen){
+  var r=$("reply"); r.hidden=false; r.textContent=text;
+  speak(text, function(){ if(thenListen!==false) listenAgain(); else earIdle() });
+}
+function earIdle(){ if(!listening) setEar(SR?"stopped":"nosupport") }
+
+/* ---------- sunna ---------- */
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+var rec=null, listening=false, misses=0, stopAsked=false, gotFinal="", lastErr="";
+var STATES={listen:"Sun rahi hoon… boliye",think:"Samajh rahi hoon…",speak:"Bata rahi hoon…",stopped:"Bolne ke liye laal button dabayein",blocked:"Mic ki ijazat band hai",nosupport:"Is browser mein awaaz nahi chalti"};
+function setEar(s){ $("ear").dataset.s=s; $("stateTxt").textContent=STATES[s]||"" }
+function startListen(){
+  if(!SR){ setEar("nosupport"); $("live").textContent="Chrome mein kholein, ya neeche likh dein."; return }
+  if(listening||speaking) return;
+  stopAsked=false; gotFinal=""; lastErr="";
+  try{
+    rec=new SR(); rec.lang=st.lang||"hi-IN"; rec.interimResults=true; rec.continuous=false; rec.maxAlternatives=1;
+    rec.onstart=function(){ listening=true; setEar("listen") };
+    rec.onresult=function(e){
+      var txt="", fin=false;
+      for(var i=0;i<e.results.length;i++){ txt+=e.results[i][0].transcript; if(e.results[i].isFinal) fin=true }
+      $("live").textContent=txt; if(fin) gotFinal=txt;
+    };
+    rec.onerror=function(e){ lastErr=e.error||"" };
+    rec.onend=function(){
+      listening=false;
+      if(gotFinal){ misses=0; var t=gotFinal; gotFinal=""; setEar("think"); handle(t); return }
+      if(lastErr==="not-allowed"||lastErr==="service-not-allowed"){ setEar("blocked"); $("live").textContent="Chrome ki settings mein is site ke liye Microphone \"Allow\" karein."; return }
+      misses++;
+      if(!stopAsked && misses<3 && !document.hidden) setTimeout(startListen,250);
+      else setEar("stopped");
+    };
+    rec.start();
+  }catch(e){ listening=false; setEar("stopped") }
+}
+function listenAgain(){ misses=0; if(!stopAsked && !document.hidden) setTimeout(startListen,300); else setEar("stopped") }
+function stopListen(){ stopAsked=true; try{ rec&&rec.abort() }catch(e){} listening=false; setEar("stopped") }
+
+/* ---------- baat samajhna ---------- */
+function splitItems(text){
+  var parts=text.split(/\s+(?:aur|or|and|y|और|اور|phir|फिर)\s+|[,،;](?!\d)/i).map(function(p){return p.trim()}).filter(Boolean);
+  var items=[], pending="";
+  parts.forEach(function(p){
+    if(findAmount(p)!==null){ items.push((pending?pending+" ":"")+p); pending="" }
+    else if(items.length) items[items.length-1]+=" "+p;
+    else pending+=(pending?" ":"")+p;
+  });
+  if(pending && items.length) items[items.length-1]+=" "+pending;
+  return items.length?items:[text];
+}
+function handle(text){
+  text=(text||"").trim();
+  if(!text){ listenAgain(); return }
+  $("live").textContent="“"+text+"”";
+  var s=norm(text).toLowerCase(), amt=findAmount(text);
+
+  if(RE_STOP.test(s)&&amt===null){ stopAsked=true; reply("Theek hai. Allah Hafiz!",false); setTimeout(function(){setEar("stopped")},1500); return }
+  /* "mita do" mein "do" ginti nahi hai */
+  if(RE_DEL.test(s)&&findAmount(s.replace(/(^|\s)(do|दो|دو)(?=[\s,.!?।]|$)/g,"$1"))===null){
+    if(!st.entries.length){ reply("Mitane ke liye koi entry nahi hai."); return }
+    var last=st.entries.pop(); save(); render();
+    reply(eurSay(last.amt)+" wali "+CATS[last.cat].n+" entry mita di. "+leftSentence()); return;
+  }
+  if(/budget|बजट|بجٹ/.test(s) && amt!==null && !RE_Q.test(s)){ st.budget=amt; save(); fillSet(); render(); reply("Theek hai, mahine ka budget "+eurSay(amt)+" rakh diya."); return }
+  if(amt===null || (RE_Q.test(s) && !/li|liya|liye|kharid|लिया|ली|खरीद/.test(s))){
+    if(RE_WEEK.test(s)) reply(weekSentence());
+    else if(RE_MONTH.test(s)) reply(monthSentence());
+    else if(amt===null && !RE_Q.test(s)) reply("Raqam samajh nahi aayi. Aise bolein: grocery 20 euro.");
+    else reply(leftSentence());
+    return;
+  }
+  var items=splitItems(text), added=[];
+  items.forEach(function(it){
+    var a=findAmount(it); if(a===null||a<=0||a>100000) return;
+    var c=findCat(it);
+    st.entries.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),amt:a,cat:c,note:it,ts:Date.now()});
+    added.push(eurSay(a)+" "+CATS[c].n);
+  });
+  if(!added.length){ reply("Yeh raqam theek nahi lag rahi. Dobara bolein."); return }
+  save(); render();
+  var msg=added.join(" aur ")+" mein likh diya. "+leftSentence();
+  if(!storageOk) msg+=" Lekin is phone mein save nahi ho saka.";
+  reply(msg);
+}
+
+function monthStats(d){ var es=st.entries.filter(function(e){return inMonth(e,d)}); var sp=sum(es); return {es:es,spent:sp,left:st.budget-sp} }
+function leftSentence(){
+  var m=monthStats(new Date());
+  if(m.left<0) return "Budget se "+eurSay(-m.left)+" zyada kharcha ho gaya hai.";
+  var s="Is mahine "+eurSay(m.left)+" baqi hain.";
+  if(m.left<=st.alertAt) s+=" Dhyan dein, is mahine ki limit khatam hone wali hai!";
+  return s;
+}
+function groupBy(es){ var g={}; es.forEach(function(e){g[e.cat]=(g[e.cat]||0)+e.amt}); return Object.keys(g).map(function(c){return {c:c,t:g[c]}}).sort(function(a,b){return b.t-a.t}) }
+function needExtra(es){ var n=0,x=0; es.forEach(function(e){ if((CATS[e.cat]||CATS.digar).need) n+=e.amt; else x+=e.amt }); return {n:n,x:x} }
+function weekSentence(){
+  var es=st.entries.filter(function(e){return inWeek(e,new Date())});
+  if(!es.length) return "Is hafte abhi tak koi kharcha nahi likha.";
+  var top=groupBy(es)[0], ne=needExtra(es);
+  return "Is hafte "+eurSay(sum(es))+" kharcha hua. Zaroorat par "+eurSay(ne.n)+", extra par "+eurSay(ne.x)+". Sab se zyada "+CATS[top.c].n+" par, "+eurSay(top.t)+".";
+}
+function monthSentence(){
+  var now=new Date(), m=monthStats(now);
+  if(!m.es.length) return "Is mahine abhi tak koi kharcha nahi likha.";
+  var top=groupBy(m.es)[0], s="Is mahine "+eurSay(m.spent)+" kharcha hua. Sab se zyada "+CATS[top.c].n+" par, "+eurSay(top.t)+". ";
+  var up=moreThanLastMonth(now); if(up.length) s+="Pichle mahine se zyada: "+up.join(", ")+". ";
+  return s+leftSentence();
+}
+function moreThanLastMonth(now){
+  var pd=new Date(now.getFullYear(),now.getMonth()-1,1), pes=st.entries.filter(function(e){return inMonth(e,pd)});
+  if(!pes.length) return [];
+  var pm={}; pes.forEach(function(e){pm[e.cat]=(pm[e.cat]||0)+e.amt});
+  return groupBy(monthStats(now).es).filter(function(g){return g.t>(pm[g.c]||0)+1}).map(function(g){return CATS[g.c].n});
+}
+
+/* ---------- dikhana ---------- */
+function dayLabel(ts){
+  var d=new Date(ts), now=new Date();
+  var diff=Math.round((new Date(now.getFullYear(),now.getMonth(),now.getDate())-new Date(d.getFullYear(),d.getMonth(),d.getDate()))/864e5);
+  return diff===0?"Aaj":diff===1?"Kal":d.getDate()+" "+MONTHS[d.getMonth()];
+}
+function catSelect(e){
+  var cat=CATS[e.cat]||CATS.digar, h='<select class="chip '+(cat.need?'need':'extra')+'" data-cat="'+e.id+'" aria-label="Category badlein">';
+  for(var c in CATS) h+='<option value="'+c+'"'+(c===e.cat?' selected':'')+'>'+esc(CATS[c].n)+'</option>';
+  return h+'</select>';
+}
+function renderList(){
+  var p=$("p-list"), now=new Date();
+  var es=st.entries.filter(function(e){return inMonth(e,now)}).slice().reverse();
+  if(!es.length){ p.innerHTML='<h2>Is mahine ka khata</h2><div class="empty">Abhi koi kharcha nahi likha.<br>Bas bolein, jaise <b>"Lidl se 18 euro ki sabzi"</b>.</div>'; return }
+  var h='<h2>Is mahine ka khata</h2><ul class="list">', last="";
+  es.forEach(function(e){
+    var dl=dayLabel(e.ts); if(dl!==last){ h+='<li class="day">'+dl+'</li>'; last=dl }
+    h+='<li><span class="what">'+catSelect(e)+'<span class="note">'+esc(e.note)+'</span></span><span class="amt">'+eur(e.amt)+'</span><button class="x" data-del="'+e.id+'" aria-label="Mitao">✕</button></li>';
+  });
+  p.innerHTML=h+'</ul><p class="small">Category ghalat ho to us par tap kar ke badal dein.</p>';
+}
+function barsHtml(groups,max,prevMap){
+  return '<div class="bars">'+groups.map(function(g){
+    var cat=CATS[g.c]||CATS.digar, w=max?Math.max(4,g.t/max*100):0, cmp="";
+    if(prevMap){ var pv=prevMap[g.c]||0, d=g.t-pv;
+      cmp = pv===0?'<span class="cmp up">Pichle mahine yeh kharcha nahi tha</span>': d>1?'<span class="cmp up">Pichle mahine se '+eur(d)+' zyada</span>': d<-1?'<span class="cmp down">Pichle mahine se '+eur(-d)+' kam</span>':'<span class="cmp">Pichle mahine jitna</span>' }
+    return '<div class="bar '+(cat.need?'need':'extra')+'"><div class="lab"><span>'+esc(cat.n)+'</span><span class="amt">'+eur(g.t)+'</span></div><div class="track"><i style="width:'+w+'%"></i></div>'+cmp+'</div>';
+  }).join("")+'</div>';
+}
+function splitHtml(ne){ return '<div class="split"><div><span class="tag need">Zaroorat</span><b>'+eur(ne.n)+'</b></div><div><span class="tag extra">Extra</span><b>'+eur(ne.x)+'</b></div></div>' }
+function renderWeek(){
+  var p=$("p-week"), now=new Date(), ws=weekStart(now), es=st.entries.filter(function(e){return inWeek(e,now)});
+  var head='<h2>Is hafta</h2><div class="sub">'+ws.getDate()+' '+MONTHS[ws.getMonth()]+' (Monday) se aaj tak</div>';
+  if(!es.length){ p.innerHTML=head+'<div class="empty">Is hafte abhi koi kharcha nahi.</div>'; return }
+  var g=groupBy(es), prev=new Date(ws); prev.setDate(prev.getDate()-7);
+  var pt=sum(st.entries.filter(function(e){return inWeek(e,prev)})), t=sum(es);
+  var cmp=pt?(t>pt?'<span class="cmp up">Pichle hafte se '+eur(t-pt)+' zyada</span>':'<span class="cmp down">Pichle hafte se '+eur(pt-t)+' kam</span>'):'';
+  p.innerHTML=head+'<div class="total num">'+eur(t)+'</div>'+cmp+splitHtml(needExtra(es))+barsHtml(g,g[0].t,null)+'<div class="row"><button class="btn ghost" data-speak="week">🔊 Suno</button></div>';
+}
+function renderMonth(){
+  var p=$("p-month"), now=new Date(), m=monthStats(now);
+  var pd=new Date(now.getFullYear(),now.getMonth()-1,1), pes=st.entries.filter(function(e){return inMonth(e,pd)}), pm={};
+  pes.forEach(function(e){pm[e.cat]=(pm[e.cat]||0)+e.amt});
+  var head='<h2>'+MONTHS[now.getMonth()]+' ka hisaab</h2>';
+  if(!m.es.length){ p.innerHTML=head+'<div class="empty">Is mahine abhi koi kharcha nahi.</div>'; return }
+  var g=groupBy(m.es), up=moreThanLastMonth(now);
+  var note=pes.length?(up.length?'<p class="small">Is mahine in cheezon par pichle mahine se zyada kharch hua: <b>'+esc(up.join(", "))+'</b>.</p>':'<p class="small">Koi cheez pichle mahine se zyada nahi. Shabash!</p>'):'<p class="small">Pichle mahine ka data nahi, muqabla agle mahine se dikhega.</p>';
+  p.innerHTML=head+'<div class="total num">'+eur(m.spent)+'</div><div class="sub">Budget '+eur(st.budget)+' · '+(m.left>=0?eur(m.left)+' baqi':eur(-m.left)+' zyada')+'</div>'+splitHtml(needExtra(m.es))+barsHtml(g,g[0].t,pes.length?pm:null)+note+'<div class="row"><button class="btn ghost" data-speak="month">🔊 Suno</button></div>';
+}
+function renderCover(){
+  var now=new Date(), m=monthStats(now);
+  $("monthName").textContent=MONTHS[now.getMonth()]+" "+now.getFullYear();
+  $("leftAmt").textContent=m.left>=0?eur(m.left):"−"+eur(-m.left);
+  $("leftLbl").textContent=m.left>=0?"baqi hain is mahine":"budget se zyada kharch";
+  $("meterFill").style.width=(st.budget>0?Math.max(0,Math.min(100,m.left/st.budget*100)):0)+"%";
+  $("spentLbl").textContent="Kharcha "+eur(m.spent); $("budgetLbl").textContent="Budget "+eur(st.budget);
+  var a=$("alertBox");
+  if(m.left<0){a.className="alert bad";a.textContent="⚠️ Is mahine ka budget khatam. "+eur(-m.left)+" zyada kharch ho chuke hain.";a.hidden=false}
+  else if(m.es.length&&m.left<=st.alertAt){a.className="alert warn";a.textContent="⚠️ Sirf "+eur(m.left)+" baqi hain. Is mahine ki limit khatam hone wali hai.";a.hidden=false}
+  else if(!storageOk){a.className="alert warn";a.textContent="Yeh phone hisaab save nahi kar raha. Chrome ka private mode band karein.";a.hidden=false}
+  else a.hidden=true;
+}
+function render(){renderCover();renderList();renderWeek();renderMonth()}
+
+/* ---------- buttons ---------- */
+function showTab(t){ ["list","week","month","set"].forEach(function(x){ $("p-"+x).hidden=(x!==t); $("t-"+x).setAttribute("aria-selected",x===t?"true":"false") }) }
+document.querySelector(".tabs").addEventListener("click",function(e){var b=e.target.closest("button[data-tab]"); if(b) showTab(b.dataset.tab)});
+$("orb").addEventListener("click",function(){ if(listening) stopListen(); else { try{speechSynthesis.cancel()}catch(e){} speaking=false; misses=0; startListen() } });
+$("typeBtn").addEventListener("click",function(){ var v=$("typeIn").value; $("typeIn").value=""; handle(v) });
+$("typeIn").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); var v=this.value; this.value=""; handle(v) } });
+$("typeIn").addEventListener("focus",function(){ if(listening) stopListen() });
+document.addEventListener("change",function(e){
+  var s=e.target.closest("select[data-cat]");
+  if(s){ st.entries.forEach(function(x){ if(x.id===s.dataset.cat) x.cat=s.value }); save(); render() }
+});
+document.addEventListener("click",function(e){
+  var d=e.target.closest("button[data-del]");
+  if(d){
+    if(d.dataset.sure==="1"){ st.entries=st.entries.filter(function(x){return x.id!==d.dataset.del}); save(); render(); reply("Entry mita di. "+leftSentence(),false) }
+    else { d.dataset.sure="1"; d.textContent="Pakka?"; setTimeout(function(){ if(d.isConnected){d.dataset.sure="";d.textContent="✕"} },3000) }
+  }
+  var s=e.target.closest("button[data-speak]");
+  if(s) reply(s.dataset.speak==="week"?weekSentence():monthSentence(),false);
+});
+function fillSet(){ $("budgetIn").value=st.budget; $("alertIn").value=st.alertAt; $("voiceIn").checked=!!st.voice; $("autoIn").checked=st.auto!==false; $("langIn").value=st.lang||"hi-IN" }
+$("saveSet").addEventListener("click",function(){
+  var b=parseFloat($("budgetIn").value), a=parseFloat($("alertIn").value);
+  if(isNaN(b)||b<0){$("setMsg").textContent="Budget ki raqam sahi likhein.";return}
+  st.budget=b; st.alertAt=isNaN(a)?20:a; st.voice=$("voiceIn").checked; st.auto=$("autoIn").checked; st.lang=$("langIn").value; save(); render();
+  $("setMsg").textContent=storageOk?"Save ho gaya.":"Is phone mein save nahi ho saka.";
+});
+$("testVoice").addEventListener("click",function(){ var v=st.voice; st.voice=true; speak("Assalam o alaikum! Main aap ka Khata hoon. "+leftSentence(),earIdle); st.voice=v });
+$("copyBk").addEventListener("click",function(){
+  var txt=JSON.stringify(st);
+  function fb(){ $("bkIn").value=txt; $("bkIn").select(); $("bkMsg").textContent="Upar wala text select hai, use copy kar lein." }
+  try{ navigator.clipboard.writeText(txt).then(function(){$("bkMsg").textContent="Copy ho gaya. Ab WhatsApp mein khud ko paste kar dein."},fb) }catch(e){fb()}
+});
+$("loadBk").addEventListener("click",function(){
+  try{
+    var o=JSON.parse($("bkIn").value); if(!o||!Array.isArray(o.entries)) throw 0;
+    /* backup bahar se aata hai: sirf sahi shakal wali cheezein andar lein */
+    var es=o.entries.filter(function(e){ return e&&typeof e.amt==="number"&&typeof e.ts==="number"&&typeof e.note==="string"&&Object.prototype.hasOwnProperty.call(CATS,e.cat)&&/^[a-z0-9]+$/i.test(e.id) });
+    for(var k in st) if(typeof o[k]===typeof st[k]&&k!=="entries") st[k]=o[k];
+    st.entries=es; save(); fillSet(); render(); $("bkMsg").textContent=es.length+" entries wapas aa gayin." }
+  catch(e){ $("bkMsg").textContent="Yeh backup theek nahi. Poora text dobara paste karein." }
+});
+
+/* naye hafte/mahine par pichla hisaab */
+function periodNote(){
+  var now=new Date(), wk=weekKey(now), mk=monthKey(now), msg="";
+  if(st.seenMonth && st.seenMonth!==mk){
+    var pd=new Date(now.getFullYear(),now.getMonth()-1,1), pes=st.entries.filter(function(e){return inMonth(e,pd)});
+    if(pes.length){ var ne=needExtra(pes); msg=MONTHS[pd.getMonth()]+" mein kul "+eurSay(sum(pes))+" kharcha hua. Zaroorat par "+eurSay(ne.n)+", extra par "+eurSay(ne.x)+"." }
+  } else if(st.seenWeek && st.seenWeek!==wk){
+    var pw=weekStart(now); pw.setDate(pw.getDate()-7); var pwe=st.entries.filter(function(e){return inWeek(e,pw)});
+    if(pwe.length) msg="Pichle hafte "+eurSay(sum(pwe))+" kharcha hua.";
+  }
+  st.seenWeek=wk; st.seenMonth=mk; save();
+  return msg;
+}
+
+document.addEventListener("visibilitychange",function(){
+  if(document.hidden){ try{rec&&rec.abort()}catch(e){} try{speechSynthesis.cancel()}catch(e){} listening=false; speaking=false }
+  else if(st.auto!==false){ misses=0; stopAsked=false; render(); setTimeout(startListen,400) }
+});
+
+fillSet(); render();
+var note=periodNote();
+if(note){ $("reply").hidden=false; $("reply").textContent="📒 "+note }
+if(!SR) setEar("nosupport");
+else if(st.auto!==false) setTimeout(startListen,500);
+else setEar("stopped");
+
+if("serviceWorker" in navigator){ window.addEventListener("load",function(){ navigator.serviceWorker.register("sw.js").catch(function(){}) }) }
+})();
+</script>
+</body>
+</html>
