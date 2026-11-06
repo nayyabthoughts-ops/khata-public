@@ -14,11 +14,12 @@ A private, voice-first expense diary ("khata") for one person, installed on an A
 ### F1. Hands-free voice input
 - App starts listening automatically when opened or brought back to the screen (Web Speech API, `webkitSpeechRecognition`).
 - Default language `hi-IN` (understands mixed Urdu/Hindi best). Options: `ur-PK`, `en-IN`, `es-ES`.
+- The screen never shows Hindi (Devanagari) script. Chrome returns `hi-IN` speech in that script, so the app converts it to Roman Urdu before showing or saving it. The app's word lists still contain it so it can understand what was said.
 - After answering, it listens again. Stops after ~3 silent tries, or when she says "bas, shukriya". Tapping the big red mic restarts.
 - A small text box is a fallback.
 
 ### F2. Understanding the sentence (on the phone, no AI server)
-- Finds the amount: digits, "20 euro", "€20", Devanagari/Urdu digits, common number words (das, bees, pachas, सौ…).
+- Finds the amount: digits, "20 euro", "€20", Devanagari/Urdu digits, common number words (das, bees, pachas, sau…).
 - Finds the category by keywords: Grocery, Ghar/Kiraya, Bills, Safar, Sehat/Dawai, Mobile, Kaghazat/Fees, Ghar bheje, Bahar khana, Kapre/Shopping, Tohfa/Ghoomna, Digar.
 - Each category is marked **Zaroorat** (need) or **Extra**.
 - Several items in one sentence: "metro 10 aur kebab 8 euro" → two entries.

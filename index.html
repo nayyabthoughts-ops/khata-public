@@ -152,8 +152,8 @@ select.chip.need{border-color:var(--good);color:var(--good)} select.chip.extra{b
     <input id="alertIn" type="number" inputmode="decimal" min="0" step="1">
     <label for="langIn">Aap kis zubaan mein bolengi?</label>
     <select id="langIn">
-      <option value="hi-IN">Urdu / Hindi mila jula (behtar samajhta hai)</option>
-      <option value="ur-PK">Urdu (Pakistan)</option>
+      <option value="hi-IN">Urdu + English mila jula, Roman mein dikhega (behtar samajhta hai)</option>
+      <option value="ur-PK">Urdu (Pakistan), Urdu likhai mein dikhega</option>
       <option value="en-IN">English</option>
       <option value="es-ES">Español</option>
     </select>
@@ -196,10 +196,60 @@ var WORDNUM={"ek":1,"do":2,"teen":3,"char":4,"chaar":4,"panch":5,"paanch":5,"chh
   "एक":1,"दो":2,"तीन":3,"चार":4,"पांच":5,"पाँच":5,"छह":6,"सात":7,"आठ":8,"नौ":9,"दस":10,"पंद्रह":15,"बीस":20,"पच्चीस":25,"तीस":30,"चालीस":40,"पचास":50,"सौ":100};
 var MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
 
+/* ---------- Hindi likhai kabhi screen par nahi: sunne ke baad sab Roman Urdu mein ---------- */
+var DEVA_CHAR=/[ऀ-ॿ꣠-ꣿ᳐-᳿]/;
+var DEV_WORDS={"यूरो":"euro","युरो":"euro","में":"mein","है":"hai","हैं":"hain","मैं":"main","नहीं":"nahi","की":"ki","वाला":"wala","वाली":"wali","वाले":"wale","महीना":"mahina","महीने":"mahine",
+  "चाय":"chai","चावल":"chawal","किराया":"kiraya","किराना":"kirana","सामान":"samaan","दवा":"dawa","दवाई":"dawai","बिल":"bill","रेंट":"rent","फीस":"fees","फोटो":"photo","मोबाइल":"mobile","रिचार्ज":"recharge","इंटरनेट":"internet",
+  "ग्रोसरी":"grocery","ग्रॉसरी":"grocery","ग्रोसरि":"grocery","कॉफी":"coffee","कबाब":"kebab","बर्गर":"burger","पिज्जा":"pizza","शॉपिंग":"shopping","डॉक्टर":"doctor","टैक्सी":"taxi","ट्रेन":"train","सुपर":"super","लिडल":"Lidl","लिडिल":"Lidl","सब्जी":"sabzi"};
+var DEV_CONS={"क":"k","ख":"kh","ग":"g","घ":"gh","ङ":"n","च":"ch","छ":"chh","ज":"j","झ":"jh","ञ":"n","ट":"t","ठ":"th","ड":"d","ढ":"dh","ण":"n","त":"t","थ":"th","द":"d","ध":"dh","न":"n","ऩ":"n","प":"p","फ":"ph","ब":"b","भ":"bh","म":"m","य":"y","र":"r","ऱ":"r","ल":"l","ळ":"l","ऴ":"l","व":"w","श":"sh","ष":"sh","स":"s","ह":"h"};
+var DEV_NUKTA={"क":"q","ख":"kh","ग":"gh","ज":"z","ड":"r","ढ":"rh","फ":"f","य":"y"};
+var DEV_MATRA={"ा":"aa","ि":"i","ी":"ee","ु":"u","ू":"oo","ृ":"ri","ॅ":"e","ॉ":"o","े":"e","ै":"ai","ो":"o","ौ":"au"};
+var DEV_VOWEL={"अ":"a","आ":"aa","इ":"i","ई":"ee","उ":"u","ऊ":"oo","ऋ":"ri","ऍ":"e","ऑ":"o","ए":"e","ऐ":"ai","ओ":"o","औ":"au"};
+function devWord(w){
+  w=w.replace(/[‌‍]/g,"");
+  if(Object.prototype.hasOwnProperty.call(DEV_WORDS,w)) return DEV_WORDS[w];
+  var u=[], i, last;
+  for(i=0;i<w.length;i++){
+    var ch=w.charAt(i); last=u[u.length-1];
+    if(DEV_CONS[ch]){
+      var c=DEV_CONS[ch];
+      if(w.charAt(i+1)==="़"){ c=DEV_NUKTA[ch]||c; i++ }
+      u.push({c:c,v:"a",schwa:true,tail:""});
+    }
+    else if(DEV_VOWEL[ch]) u.push({c:"",v:DEV_VOWEL[ch],schwa:false,tail:""});
+    else if(ch==="ॐ") u.push({c:"",v:"om",schwa:false,tail:""});
+    else if(!last) continue;
+    else if(DEV_MATRA[ch]){ if(last.schwa){ last.v=DEV_MATRA[ch]; last.schwa=false } }
+    else if(ch==="्"){ if(last.schwa){ last.v=""; last.schwa=false } }
+    else if(ch==="ं"||ch==="ँ"){ last.schwa=false; last.nasal=true }
+    else if(ch==="ः"){ last.schwa=false; last.tail="h" }
+  }
+  var n=u.length; if(!n) return "";
+  last=u[n-1];
+  /* bolne mein aakhri "a" nahi aata: ghar, chawal */
+  if(n>1&&last.schwa){ last.v=""; last.schwa=false }
+  /* beech ka "a" bhi: kitna, lagta, kapre */
+  for(i=1;i<n-1;i++){ if(u[i].schwa&&u[i-1].v&&u[i+1].c&&u[i+1].v){ u[i].v=""; u[i].schwa=false } }
+  if(last.c&&!last.nasal){ if(last.v==="aa") last.v="a"; else if(last.v==="ee") last.v="i"; else if(last.v==="oo") last.v="u" }
+  var out="";
+  for(i=0;i<n;i++){ var nx=u[i+1]; out+=u[i].c+u[i].v+(u[i].nasal?(nx&&/^(p|b|m)/.test(nx.c)?"m":"n"):"")+u[i].tail }
+  return out;
+}
+function toRoman(t){
+  t=String(t==null?"":t);
+  if(!DEVA_CHAR.test(t)) return t;
+  if(t.normalize) t=t.normalize("NFC");
+  return t.replace(/[०-९]/g,function(c){return "०१२३४५६७८९".indexOf(c)}).replace(/[।॥]/g,".")
+    .replace(/[ऀ-ॿ][ऀ-ॿ‌‍]*/g,devWord)
+    .replace(/[ऀ-ॿ꣠-ꣿ᳐-᳿]/g,"");
+}
+
 var st={budget:200,alertAt:20,voice:true,auto:true,lang:"hi-IN",entries:[],seenWeek:"",seenMonth:""};
 var storageOk=true;
 try{var raw=localStorage.getItem(KEY); if(raw){var o=JSON.parse(raw); for(var k in o) st[k]=o[k];}}catch(e){storageOk=false}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(st));storageOk=true}catch(e){storageOk=false}}
+/* purani entries jo Hindi likhai mein save hain, unhein bhi Roman kar dein */
+(function(){ var changed=false; if(Array.isArray(st.entries)) st.entries.forEach(function(e){ if(e&&typeof e.note==="string"&&DEVA_CHAR.test(e.note)){ e.note=toRoman(e.note); changed=true } }); if(changed) save() })();
 try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist() }catch(e){}
 
 function $(id){return document.getElementById(id)}
@@ -277,7 +327,7 @@ function startListen(){
     rec.onresult=function(e){
       var txt="", fin=false;
       for(var i=0;i<e.results.length;i++){ txt+=e.results[i][0].transcript; if(e.results[i].isFinal) fin=true }
-      $("live").textContent=txt; if(fin) gotFinal=txt;
+      $("live").textContent=toRoman(txt); if(fin) gotFinal=txt;
     };
     rec.onerror=function(e){ lastErr=e.error||"" };
     rec.onend=function(){
@@ -309,7 +359,7 @@ function splitItems(text){
 function handle(text){
   text=(text||"").trim();
   if(!text){ listenAgain(); return }
-  $("live").textContent="“"+text+"”";
+  $("live").textContent="“"+toRoman(text)+"”";
   var s=norm(text).toLowerCase(), amt=findAmount(text);
 
   if(RE_STOP.test(s)&&amt===null){ stopAsked=true; reply("Theek hai. Allah Hafiz!",false); setTimeout(function(){setEar("stopped")},1500); return }
@@ -331,7 +381,7 @@ function handle(text){
   items.forEach(function(it){
     var a=findAmount(it); if(a===null||a<=0||a>100000) return;
     var c=findCat(it);
-    st.entries.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),amt:a,cat:c,note:it,ts:Date.now()});
+    st.entries.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),amt:a,cat:c,note:toRoman(it),ts:Date.now()});
     added.push(eurSay(a)+" "+CATS[c].n);
   });
   if(!added.length){ reply("Yeh raqam theek nahi lag rahi. Dobara bolein."); return }
@@ -443,6 +493,11 @@ $("orb").addEventListener("click",function(){ if(listening) stopListen(); else {
 $("typeBtn").addEventListener("click",function(){ var v=$("typeIn").value; $("typeIn").value=""; handle(v) });
 $("typeIn").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); var v=this.value; this.value=""; handle(v) } });
 $("typeIn").addEventListener("focus",function(){ if(listening) stopListen() });
+/* keyboard ki awaaz ya purana backup Hindi likhai laye to box mein bhi Roman dikhao */
+["typeIn","bkIn"].forEach(function(id){
+  function fix(e){ var b=$(id); if(!(e&&e.isComposing)&&DEVA_CHAR.test(b.value)) b.value=toRoman(b.value) }
+  $(id).addEventListener("input",fix); $(id).addEventListener("compositionend",fix);
+});
 document.addEventListener("change",function(e){
   var s=e.target.closest("select[data-cat]");
   if(s){ st.entries.forEach(function(x){ if(x.id===s.dataset.cat) x.cat=s.value }); save(); render() }
@@ -474,6 +529,7 @@ $("loadBk").addEventListener("click",function(){
     var o=JSON.parse($("bkIn").value); if(!o||!Array.isArray(o.entries)) throw 0;
     /* backup bahar se aata hai: sirf sahi shakal wali cheezein andar lein */
     var es=o.entries.filter(function(e){ return e&&typeof e.amt==="number"&&typeof e.ts==="number"&&typeof e.note==="string"&&Object.prototype.hasOwnProperty.call(CATS,e.cat)&&/^[a-z0-9]+$/i.test(e.id) });
+    es.forEach(function(e){ e.note=toRoman(e.note) });
     for(var k in st) if(typeof o[k]===typeof st[k]&&k!=="entries") st[k]=o[k];
     st.entries=es; save(); fillSet(); render(); $("bkMsg").textContent=es.length+" entries wapas aa gayin." }
   catch(e){ $("bkMsg").textContent="Yeh backup theek nahi. Poora text dobara paste karein." }
